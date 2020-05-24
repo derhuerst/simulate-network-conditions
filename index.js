@@ -1,23 +1,38 @@
 'use strict'
 
-const {ok} = require('assert')
+const {ok, strictEqual} = require('assert')
 const parallelTransform = require('./lib/parallel-transform')
 
-const delay = (ms) => {
+const basicLatency = (ms) => {
 	ok(Number.isInteger(ms), 'ms must be an integer')
 	ok(ms > 0, 'ms must be > 0')
-	const withDelay = (chunk, push, done) => {
+
+	const withBasicLatency = (chunk, push, done) => {
 		setTimeout(() => {
 			done(null, chunk)
 		}, ms)
 	}
-	return withDelay
+	return withBasicLatency
+}
+
+const latency = (getLatency) => {
+	strictEqual(typeof getLatency, 'function', 'getLatency must be a function')
+	const l = getLatency(0)
+	ok(Number.isInteger(l), 'getLatency() must return an integer')
+	ok(l > 0, 'latency must be > 0')
+
+	let i = 0
+	const withLatency = (chunk, push, done) => {
+		setTimeout(done, getLatency(i++), null, chunk)
+	}
+	return withLatency
 }
 
 const basicLoss = (rate) => {
-	ok(Number.isFinite(ms), 'rate must be a finite number')
-	ok(ms >= 0, 'ms must be >= 0')
-	ok(ms <= 1, 'ms must be <= 1')
+	ok(Number.isFinite(rate), 'rate must be a finite number')
+	ok(rate >= 0, 'rate must be >= 0')
+	ok(rate <= 1, 'rate must be <= 1')
+
 	const withBasicLoss = (chunk, push, done) => {
 		const lost = Math.random() <= rate
 		done(null, lost ? null : chunk)
@@ -25,21 +40,49 @@ const basicLoss = (rate) => {
 	return withBasicLoss
 }
 
-const duplicate = (n = 2) => {
-	ok(Number.isInteger(n), 'n must be an integer')
-	ok(n > 1, 'n must be > 1')
-	const withDuplication = (chunk, push, done) => {
-		for (let i = 1; i < n; i++) push(chunk) // n -1
-		done(null, chunk) // 1
+const _lossBy = (frame, getT) => {
+	strictEqual(typeof frame, 'function', 'frame must be a function')
+	let i = 0
+	let f = frame(getT(), i++)
+	ok(Number.isInteger(f.from), 'frame(i).from must be a finite number')
+	ok(Number.isInteger(f.length), 'frame(i).length must be a finit number')
+
+	const withLossByTime = (chunk, push, done) => {
+		const t = getT()
+		// frame over? -> generate new
+		if (f && t >= f.from + f.length) f = frame(t, i++)
+
+		// within frame? -> drop chunk
+		if (f && t >= f.from && t < f.from + f.length) done()
+		// outside of frame? -> pass chunk on
+		else done(null, chunk)
 	}
-	return withDuplication
+	return withLossByTime
 }
 
-const emulateNetworkConditions = (fns, opt = {}) => {
-	return parallelTransform(fns, opt) // todo: make configurable
+const lossByTime = (frame) => {
+	return _lossBy(frame, () => Date.now())
 }
 
-emulateNetworkConditions.delay = delay
-emulateNetworkConditions.basicLoss = basicLoss
-emulateNetworkConditions.duplicate = duplicate
-module.exports = emulateNetworkConditions
+const lossByPacketIdx = (frame) => {
+	let idx = -1
+	return _lossBy(frame, () => idx++)
+}
+
+const simulateNetworkConditions = (transforms, opt = {}) => {
+	ok(Array.isArray(transforms), 'transforms must be an array')
+	const lTransforms = transforms.length
+	ok(lTransforms > 0, 'transforms must not be empty')
+
+	return parallelTransform(transforms, {
+		concurrency: 50, // todo: this is hacky
+		...opt,
+	})
+}
+
+simulateNetworkConditions.basicLatency = basicLatency
+simulateNetworkConditions.latency = latency
+simulateNetworkConditions.basicLoss = basicLoss
+simulateNetworkConditions.lossByTime = lossByTime
+simulateNetworkConditions.lossByPacketIdx = lossByPacketIdx
+module.exports = simulateNetworkConditions
