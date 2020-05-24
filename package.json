@@ -1,0 +1,37 @@
+{
+	"name": "simulate-network-conditions",
+	"description": "Simulate lossy or high-latency network conditions.",
+	"version": "1.0.0",
+	"main": "index.js",
+	"files": [
+		"index.js",
+		"example.js"
+	],
+	"keywords": [
+		"network",
+		"packet loss",
+		"latency",
+		"throttling",
+		"devtools"
+	],
+	"author": "Jannis R <mail@jannisr.de>",
+	"homepage": "https://github.com/derhuerst/simulate-network-conditions",
+	"repository": "derhuerst/simulate-network-conditions",
+	"bugs": "https://github.com/derhuerst/simulate-network-conditions/issues",
+	"license": "ISC",
+	"engines": {
+		"node": ">=10"
+	},
+	"dependencies": {
+	},
+	"devDependencies": {
+		"eslint": "^7.1.0",
+		"tap-min": "^2.0.0",
+		"tape": "^5.0.0"
+	},
+	"scripts": {
+		"test": "env NODE_ENV=dev node test.js | tap-min",
+		"lint": "eslint .",
+		"prepublishOnly": "npm test && npm run lint"
+	}
+}
