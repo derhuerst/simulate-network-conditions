@@ -25,9 +25,21 @@ const basicLoss = (rate) => {
 	return withBasicLoss
 }
 
-const emulateNetworkConditions = (processChunk, opt = {}) => {
-	return parallelTransform(processChunk, opt)
+const duplicate = (n = 2) => {
+	ok(Number.isInteger(n), 'n must be an integer')
+	ok(n > 1, 'n must be > 1')
+	const withDuplication = (chunk, push, done) => {
+		for (let i = 1; i < n; i++) push(chunk) // n -1
+		done(null, chunk) // 1
+	}
+	return withDuplication
+}
+
+const emulateNetworkConditions = (fns, opt = {}) => {
+	return parallelTransform(fns, opt) // todo: make configurable
 }
 
 emulateNetworkConditions.delay = delay
+emulateNetworkConditions.basicLoss = basicLoss
+emulateNetworkConditions.duplicate = duplicate
 module.exports = emulateNetworkConditions
