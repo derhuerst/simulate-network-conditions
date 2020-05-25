@@ -28,6 +28,8 @@
 	"devDependencies": {
 		"eslint": "^7.1.0",
 		"from2": "^2.3.0",
+		"get-stream": "^5.1.0",
+		"pump": "^3.0.0",
 		"tap-min": "^2.0.0",
 		"tape": "^5.0.0"
 	},
