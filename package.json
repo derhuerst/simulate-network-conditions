@@ -1,7 +1,7 @@
 {
 	"name": "simulate-network-conditions",
 	"description": "Simulate lossy or high-latency network conditions.",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"main": "index.js",
 	"files": [
 		"index.js",

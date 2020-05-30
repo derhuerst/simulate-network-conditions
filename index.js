@@ -3,16 +3,16 @@
 const {ok, strictEqual} = require('assert')
 const {transform: parallelTransform} = require('parallel-stream')
 
-const basicLatency = (ms) => {
+const constantLatency = (ms) => {
 	ok(Number.isInteger(ms), 'ms must be an integer')
 	ok(ms > 0, 'ms must be > 0')
 
-	const withBasicLatency = (chunk, push, done) => {
+	const withConstantLatency = (chunk, push, done) => {
 		setTimeout(() => {
 			done(null, chunk)
 		}, ms)
 	}
-	return withBasicLatency
+	return withConstantLatency
 }
 
 const latency = (getLatency) => {
@@ -28,16 +28,16 @@ const latency = (getLatency) => {
 	return withLatency
 }
 
-const basicLoss = (rate) => {
+const constantLoss = (rate) => {
 	ok(Number.isFinite(rate), 'rate must be a finite number')
 	ok(rate >= 0, 'rate must be >= 0')
 	ok(rate <= 1, 'rate must be <= 1')
 
-	const withBasicLoss = (chunk, push, done) => {
+	const withConstantLoss = (chunk, push, done) => {
 		const lost = Math.random() <= rate
 		done(null, lost ? null : chunk)
 	}
-	return withBasicLoss
+	return withConstantLoss
 }
 
 const _lossBy = (frame, getT) => {
@@ -106,9 +106,11 @@ const simulateNetworkConditions = (transform, opt = {}) => {
 	return out
 }
 
-simulateNetworkConditions.basicLatency = basicLatency
+simulateNetworkConditions.basicLatency = constantLatency
+simulateNetworkConditions.constantLatency = constantLatency
 simulateNetworkConditions.latency = latency
-simulateNetworkConditions.basicLoss = basicLoss
+simulateNetworkConditions.basicLoss = constantLoss
+simulateNetworkConditions.constantLoss = constantLoss
 simulateNetworkConditions.lossByTime = lossByTime
 simulateNetworkConditions.lossByPacketIdx = lossByPacketIdx
 module.exports = simulateNetworkConditions
